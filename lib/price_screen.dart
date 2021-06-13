@@ -10,6 +10,23 @@ class PriceScreen extends StatefulWidget {
 
 class _PriceScreenState extends State<PriceScreen> {
   String selectedCurrency = "USD";
+  bool waiting = true;
+  Map<String, String> coinValues = {};
+
+  void getData() async {
+    try {
+      setState(() {
+        waiting = true;
+      });
+      var data = await CoinData().getCoinData(selectedCurrency);
+      setState(() {
+        coinValues = data;
+        waiting = false;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
 
   DropdownButton<String> androidPicker() {
     return DropdownButton<String>(
@@ -24,6 +41,7 @@ class _PriceScreenState extends State<PriceScreen> {
       onChanged: (String value) {
         setState(() {
           selectedCurrency = value;
+          getData();
         });
       },
     );
@@ -32,7 +50,12 @@ class _PriceScreenState extends State<PriceScreen> {
   CupertinoPicker applePicker() {
     return CupertinoPicker(
       itemExtent: 32,
-      onSelectedItemChanged: (index) {},
+      onSelectedItemChanged: (index) {
+        setState(() {
+          selectedCurrency = currenciesList[index];
+          getData();
+        });
+      },
       children: [
         for (String item in currenciesList)
           Text(item, style: TextStyle(color: Colors.white))
@@ -41,10 +64,16 @@ class _PriceScreenState extends State<PriceScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    getData();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('🤑 Coin Ticker'),
+        title: Text('Coin Ticker'),
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -61,7 +90,7 @@ class _PriceScreenState extends State<PriceScreen> {
               child: Padding(
                 padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 28.0),
                 child: Text(
-                  '1 BTC = ? USD',
+                  '1 BTC = ${waiting ? '?' : coinValues['BTC']} $selectedCurrency',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 20.0,
